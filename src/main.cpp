@@ -1,18 +1,36 @@
 #include <Arduino.h>
+#include <TeensyTimerTool.h>
+using namespace TeensyTimerTool;
 
-// put function declarations here:
-int myFunction(int, int);
+// CHIPPERIOD is in micro-seconds
+#define CHIPPERIOD 0.5
+#define VERBOSE
+
+PeriodicTimer ppmChipTimer(GPT1);
+const int ledPin = 14; // Pin 13
+
+volatile int bWrite = 0;
+
+// Function Declarations
+void writeNextChip(void);
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+ 
+  CCM_CSCMR1 &= ~64; // Change peripheral clock source from OSC (24MHz) to ipg_clk_root (150MHz) - Page 1051 rev3  
+
+  pinMode(ledPin, OUTPUT);
+  digitalWriteFast(ledPin, bWrite);
+  
+  
+  ppmChipTimer.begin(writeNextChip, CHIPPERIOD); // start interrupt timer
 }
 
-void loop() {
+FASTRUN void loop() {
   // put your main code here, to run repeatedly:
 }
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+// Function Definitions
+FASTRUN void writeNextChip(void)
+{
+  digitalWriteFast(ledPin,!digitalReadFast(ledPin));
 }
